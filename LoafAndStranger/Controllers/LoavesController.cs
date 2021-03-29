@@ -10,9 +10,9 @@ namespace LoafAndStranger.Controllers
     {
         LoafRepository _repo;
 
-        public LoavesController()
+        public LoavesController(LoafRepository repo)
         {
-            _repo = new LoafRepository();
+            _repo = repo;
         }
         
         //GET to /api/loaves

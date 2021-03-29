@@ -5,66 +5,48 @@ using System.Threading.Tasks;
 using LoafAndStranger.Models;
 using Microsoft.Data.SqlClient;
 using Dapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace LoafAndStranger.DataAccess
 {
     public class TopsRepository
     {
-        const string ConnectionString = "Server=localhost;Database=LoafAndStranger;Trusted_Connection=True;";
+        // const string ConnectionString = "Server=localhost;Database=LoafAndStranger;Trusted_Connection=True;";
 
+        AppDBContext _db;
+        public TopsRepository(AppDBContext db)
+        {
+            _db = db;
+        }
         public IEnumerable<Top> GetAll()
         {
-            using var db = new SqlConnection(ConnectionString);
-
-            //var topsSql = "select * from tops";
-            //var strangersSql = "select * from  strangers where topid = @id";
-
-
-            //var tops = db.Query<Top>(topsSql);
-
-            //foreach (var top in tops)
-            //{
-            //    var relatedStrangers = db.Query<Stranger>(strangersSql, top);
-            //    top.Strangers = relatedStrangers.ToList();
-            //}
-            
-            var topsSql = "select * from tops";
-            var strangersSql = "select * from  strangers where TopId is not null";
-
-            var tops = db.Query<Top>(topsSql);
-            var strangers = db.Query<Stranger>(strangersSql);
-
-            foreach (var top in tops)
-            {
-                top.Strangers = strangers.Where(s => s.TopId == top.Id).ToList();
-            }
-
-            //var groupedStrangers = strangers.GroupBy(s => s.TopId);
-
-            //foreach (var groupedStranger in groupedStrangers)
-            //{
-            //    tops.First(t => t.Id == groupedStranger.Key).Strangers = groupedStranger.ToList();
-            //}
-
-            //var groupedStrangers = strangers.ToLookup(s => s.TopId);
-
-            //foreach (var groupedStranger in groupedStrangers)
-            //{
-            //    tops.First(t => t.Id == groupedStranger.Key).Strangers = groupedStranger.ToList();
-            //}
-
-            return tops;
+            // return _db.Tops
+            return _db.Tops
+                .Include(t => t.Strangers)
+                .ThenInclude(s=>s.Loaf)
+                .Where(t=>t.Strangers.Any(s=>s.Loaf.Type=="Monkey Bread"))
+                .AsNoTracking();
         }
+
+        public IEnumerable<Top> GetAllOccupied()
+        {
+
+            return _db.Tops.Where(t => t.Occupied);
+        }
+
 
         public Top Add(int numberOfSeats)
         {
-            using var db = new SqlConnection(ConnectionString);
+            var top = new Top { NumberOfSeats = numberOfSeats };
+            _db.Tops.Add(top);
+            _db.SaveChanges();
+          /*  using var db = new SqlConnection(ConnectionString);
 
             var sql = @"INSERT INTO [Tops] ([NumberOfSeats])
                         Output inserted.*
 	                    VALUES (@numberOfSeats)";
 
-            var top = db.QuerySingle<Top>(sql, new {numberOfSeats});
+            var top = db.QuerySingle<Top>(sql, new {numberOfSeats});*/
 
             return top;
         }
