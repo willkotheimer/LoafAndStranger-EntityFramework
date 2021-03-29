@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LoafAndStranger.DataAccess;
+using Microsoft.EntityFrameworkCore;
 
 namespace LoafAndStranger
 {
@@ -26,17 +27,22 @@ namespace LoafAndStranger
         // This method gets called by the runtime. Use this method to add services to the Inversion of Control (IoC) Container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
-            
+            services.AddControllers().AddNewtonsoftJson(options =>
+    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+);
+
             //services.AddTransient<IConfiguration>(); //every time someone asks for an instance, asp.net instantiates a new one
             //services.AddScoped<IConfiguration>(); //the first time someone asks for an instance in a single request, asp.net instantiates a new one
             //services.AddSingleton<IConfiguration>(); //the first time while the application is running, asp.net creates a new instance
 
             services.AddSingleton(Configuration);
             services.AddTransient<StrangersRepository>();
+            services.AddTransient<LoafRepository>();
+            services.AddTransient<TopsRepository>();
 
+            //Entity Framework
+            services.AddDbContext<AppDBContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("LoafAndStranger")));
         }
-
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {

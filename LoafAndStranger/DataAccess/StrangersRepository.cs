@@ -5,40 +5,26 @@ using System.Threading.Tasks;
 using Dapper;
 using LoafAndStranger.Models;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace LoafAndStranger.DataAccess
 {
     public class StrangersRepository
     {
-        readonly string ConnectionString;
+        AppDBContext _db;
 
-        public StrangersRepository(IConfiguration config)
+        public StrangersRepository(AppDBContext db)
         {
-            //ConnectionString = config.GetValue<string>("ConnectionStrings:LoafAndStranger");
-            ConnectionString = config.GetConnectionString("LoafAndStranger");
+            _db = db;
         }
 
         public IEnumerable<Stranger> GetAll()
         {
-            var sql = @"select *
-                        from Strangers s
-	                        left join Tops t 
-		                        on s.TopId = t.Id
-	                        left join Loaves l 
-		                        on s.LoafId = l.Id";
+            var strangers = _db.Strangers
+                .Include(s => s.Loaf)
+                .Include(s =>s.Top);
 
-            using var db = new SqlConnection(ConnectionString);
-
-            var strangers = db.Query<Stranger, Top, Loaf, Stranger>(sql,
-                (stranger, top, loaf) =>
-                {
-                    stranger.Loaf = loaf;
-                    stranger.Top = top;
-
-                    return stranger;
-                }, splitOn: "Id");
-            
             return strangers;
         }
     }
